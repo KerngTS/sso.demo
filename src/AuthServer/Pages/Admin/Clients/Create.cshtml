@@ -1,0 +1,102 @@
+@page "/Admin/Clients/Create"
+@model AuthServer.Pages.Admin.Clients.CreateModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,ClientManager")]
+@{
+    ViewData["Title"] = "新增 Client";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="post">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label asp-for="Input.ClientId" class="form-label">Client 識別碼</label>
+            <input asp-for="Input.ClientId" class="form-control" placeholder="例: my-spa-app" />
+            <span asp-validation-for="Input.ClientId" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.DisplayName" class="form-label">顯示名稱</label>
+            <input asp-for="Input.DisplayName" class="form-control" placeholder="例: My SPA Application" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Client 類型</label>
+            <div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" asp-for="Input.ClientType" value="public" id="typePublic" checked />
+                    <label class="form-check-label" for="typePublic">公開 (Public)</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" asp-for="Input.ClientType" value="confidential" id="typeConfidential" />
+                    <label class="form-check-label" for="typeConfidential">機密 (Confidential)</label>
+                </div>
+            </div>
+            <div class="form-text">公開客戶端無密鑰（SPA/桌面應用）；機密客戶端有密鑰（Web API）。</div>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.RedirectUris" class="form-label">重新導向 URI (每行一個)</label>
+            <textarea asp-for="Input.RedirectUris" class="form-control" rows="3"
+                      placeholder="http://localhost:5000/authentication/login-callback&#10;https://localhost:5001/authentication/login-callback"></textarea>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label asp-for="Input.PostLogoutRedirectUris" class="form-label">登出後重新導向 URI</label>
+            <textarea asp-for="Input.PostLogoutRedirectUris" class="form-control" rows="2"
+                      placeholder="http://localhost:5000/authentication/logout-callback"></textarea>
+        </div>
+    </div>
+
+    <h5 class="mt-3">授權流程</h5>
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.AllowAuthorizationCode" id="gAuthCode" />
+                <label class="form-check-label" for="gAuthCode">Authorization Code (授權碼 + PKCE)</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.AllowClientCredentials" id="gClientCred" />
+                <label class="form-check-label" for="gClientCred">Client Credentials (服務對服務)</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.AllowRefreshToken" id="gRefresh" />
+                <label class="form-check-label" for="gRefresh">Refresh Token (刷新令牌)</label>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mt-3">允許的 Scope</h5>
+    <div class="row mb-3">
+        <div class="col-md-8">
+            @foreach (var scope in Model.AvailableScopes)
+            {
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="SelectedScopes" value="@scope" id="s_@scope"
+                           checked="@(scope is "openid" or "profile" or "email")" />
+                    <label class="form-check-label" for="s_@scope"><code>@scope</code></label>
+                </div>
+            }
+        </div>
+    </div>
+
+    <h5 class="mt-3">要求 (Requirements)</h5>
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" asp-for="Input.RequirePkce" id="rPkce" checked />
+        <label class="form-check-label" for="rPkce">要求 PKCE (公開客戶端強烈建議)</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">建立</button>
+    <a class="btn btn-secondary" asp-page="Index">取消</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

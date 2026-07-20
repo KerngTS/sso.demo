@@ -1,0 +1,168 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+
+namespace AuthServer.Pages.Admin.Users;
+
+[Authorize(Roles = "admin,UserManager")]
+public class EditModel : PageModel
+{
+    private readonly UserManager<IdentityUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly ILogger<EditModel> _logger;
+
+    public EditModel(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager, ILogger<EditModel> logger)
+    {
+        _userManager = userManager;
+        _roleManager = roleManager;
+        _logger = logger;
+    }
+
+    [BindProperty]
+    public UserEditInput Input { get; set; } = new();
+
+    [BindProperty]
+    public List<string> SelectedRoles { get; set; } = new();
+
+    public List<string> AvailableRoles { get; set; } = new();
+    public string? Message { get; set; }
+    public bool IsError { get; set; }
+    public string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+
+    public async Task<IActionResult> OnGetAsync(string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null) return NotFound();
+
+        // 從 TempData 讀取上一個請求的訊息
+        Message = TempData["Message"] as string;
+        IsError = TempData["IsError"] as string == "true";
+
+        AvailableRoles = _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name!).ToList();
+
+        Input = new UserEditInput
+        {
+            Id = user.Id,
+            UserName = user.UserName ?? "",
+            Email = user.Email,
+            Roles = (await _userManager.GetRolesAsync(user)).ToList(),
+            IsDisabled = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow
+        };
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        var user = await _userManager.FindByIdAsync(Input.Id);
+        if (user == null) return NotFound();
+
+        // 禁止禁用自己的帳號
+        if (Input.IsDisabled && Input.Id == CurrentUserId)
+        {
+            TempData["Message"] = "不可禁用自己的帳號。";
+            TempData["IsError"] = "true";
+            return RedirectToPage(new { id = Input.Id });
+        }
+
+        // 更新 Email（同步更新 UserName，因為登入用 Email）"
+        if (user.Email != Input.Email)
+        {
+            user.Email = Input.Email;
+            user.UserName = Input.Email;
+            user.NormalizedEmail = _userManager.NormalizeEmail(Input.Email);
+            user.NormalizedUserName = _userManager.NormalizeName(Input.Email);
+            await _userManager.UpdateAsync(user);
+        }
+
+        // 更新禁用狀態
+        if (Input.IsDisabled)
+        {
+            await _userManager.SetLockoutEnabledAsync(user, true);
+            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+        }
+        else
+        {
+            await _userManager.SetLockoutEndDateAsync(user, null);
+        }
+
+        // 同步角色
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        var toAdd = SelectedRoles.Except(currentRoles).ToList();
+        var toRemove = currentRoles.Except(SelectedRoles).ToList();
+
+        if (toAdd.Count > 0)
+            await _userManager.AddToRolesAsync(user, toAdd);
+        if (toRemove.Count > 0)
+            await _userManager.RemoveFromRolesAsync(user, toRemove);
+
+        _logger.LogInformation("管理員 {AdminUser} 更新用戶 {TargetUserId} (Email={Email}, IsDisabled={IsDisabled})",
+            User.Identity?.Name, Input.Id, Input.Email, Input.IsDisabled);
+
+        TempData["Message"] = "更新成功。";
+        TempData["IsError"] = "false";
+        return RedirectToPage(new { id = Input.Id });
+    }
+
+    public async Task<IActionResult> OnPostResetPasswordAsync(string id, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+        {
+            TempData["Message"] = "密碼至少 6 個字元。";
+            TempData["IsError"] = "true";
+            return RedirectToPage(new { id });
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+        if (result.Succeeded)
+        {
+            _logger.LogWarning("管理員 {AdminUser} 重設用戶 {TargetUserId} 密碼", User.Identity?.Name, id);
+            TempData["Message"] = "密碼重設成功。";
+            TempData["IsError"] = "false";
+        }
+        else
+        {
+            _logger.LogWarning("管理員 {AdminUser} 重設用戶 {TargetUserId} 密碼失敗: {Error}", User.Identity?.Name, id,
+                string.Join("；", result.Errors.Select(e => e.Description)));
+            TempData["Message"] = string.Join("；", result.Errors.Select(e => e.Description));
+            TempData["IsError"] = "true";
+        }
+
+        return RedirectToPage(new { id });
+    }
+
+    private async Task LoadFormDataAsync(IdentityUser user)
+    {
+        AvailableRoles = _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name!).ToList();
+
+        Input = new UserEditInput
+        {
+            Id = user.Id,
+            UserName = user.UserName ?? "",
+            Email = user.Email,
+            Roles = (await _userManager.GetRolesAsync(user)).ToList(),
+            IsDisabled = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow
+        };
+    }
+
+    public class UserEditInput
+    {
+        public string Id { get; set; } = "";
+        public string UserName { get; set; } = "";
+
+        [Required(ErrorMessage = "Email 為必填")]
+        [EmailAddress(ErrorMessage = "Email 格式無效")]
+        public string? Email { get; set; }
+
+        public List<string> Roles { get; set; } = new();
+        public bool IsDisabled { get; set; }
+    }
+}

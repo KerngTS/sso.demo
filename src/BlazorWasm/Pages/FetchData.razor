@@ -1,0 +1,90 @@
+@page "/fetchdata"
+@attribute [Authorize]
+@inject IHttpClientFactory HttpClientFactory
+@using System.Net.Http
+
+<PageTitle>從 Web API 取得資料</PageTitle>
+
+<h1>呼叫 .NET Web API</h1>
+
+<p>此頁面使用登入後取得的 Access Token，呼叫遠端 Web API 的受保護端點。</p>
+
+@if (forecast == null)
+{
+    <p><em>載入中...</em></p>
+}
+else
+{
+    <div class="alert alert-success">
+        <strong>✅ 身份驗證成功!</strong> 您以 <code>@userName</code> 的身份呼叫了 API。
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>日期</th>
+                <th>溫度 (°C)</th>
+                <th>溫度 (°F)</th>
+                <th>摘要</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in forecast)
+            {
+                <tr>
+                    <td>@item.Date</td>
+                    <td>@item.TemperatureC</td>
+                    <td>@item.TemperatureF</td>
+                    <td>@item.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<button class="btn btn-primary" @onclick="CallWebApiAsync">重新整理資料</button>
+
+@code {
+    private WeatherForecast[]? forecast;
+    private string? userName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CallWebApiAsync();
+    }
+
+    private async Task CallWebApiAsync()
+    {
+        try
+        {
+            // 使用帶 Token 的 HttpClient 呼叫 Web API
+            var client = HttpClientFactory.CreateClient("WebApi");
+            var response = await client.GetFromJsonAsync<WeatherApiResponse>("/api/weatherforecast");
+
+            if (response != null)
+            {
+                userName = response.User;
+                forecast = response.Forecast;
+            }
+        }
+        catch (Exception ex)
+        {
+            userName = $"錯誤: {ex.Message}";
+            forecast = null;
+        }
+    }
+
+    private class WeatherApiResponse
+    {
+        public string? User { get; set; }
+        public WeatherForecast[]? Forecast { get; set; }
+    }
+
+    private class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public int TemperatureF { get; set; }
+        public string? Summary { get; set; }
+    }
+}

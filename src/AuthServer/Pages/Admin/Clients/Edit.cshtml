@@ -1,0 +1,97 @@
+@page "/Admin/Clients/Edit/{clientId}"
+@model AuthServer.Pages.Admin.Clients.EditModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,ClientManager")]
+@{
+    ViewData["Title"] = $"編輯 Client: {Model.Input.ClientId}";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ShowSecret))
+{
+    <div class="alert alert-success">
+        <strong>新的 Client Secret（僅顯示一次，請立即複製）：</strong><br />
+        <code class="text-break">@Model.ShowSecret</code>
+    </div>
+}
+
+<form method="post">
+    <input type="hidden" asp-for="Input.OriginalClientId" />
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label asp-for="Input.DisplayName" class="form-label">顯示名稱</label>
+            <input asp-for="Input.DisplayName" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">ClientId</label>
+            <input class="form-control" value="@Model.Input.ClientId" readonly />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <label asp-for="Input.RedirectUris" class="form-label">重新導向 URI (每行一個)</label>
+            <textarea asp-for="Input.RedirectUris" class="form-control" rows="4"></textarea>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <label asp-for="Input.PostLogoutRedirectUris" class="form-label">登出後重新導向 URI</label>
+            <textarea asp-for="Input.PostLogoutRedirectUris" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <h5 class="mt-3">授權流程</h5>
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.AllowAuthorizationCode" />
+                <label class="form-check-label">Authorization Code (PKCE)</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.AllowClientCredentials" />
+                <label class="form-check-label">Client Credentials</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.AllowRefreshToken" />
+                <label class="form-check-label">Refresh Token</label>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mt-3">Scope 權限</h5>
+    <div class="mb-3">
+        @foreach (var scope in Model.AvailableScopes)
+        {
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="SelectedScopes" value="@scope" id="s_@scope"
+                       checked="@Model.Input.Scopes.Contains(scope)" />
+                <label class="form-check-label" for="s_@scope"><code>@scope</code></label>
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-primary">儲存</button>
+
+    @if (Model.Input.ClientType == "confidential")
+    {
+        <button type="submit" class="btn btn-warning"
+                asp-page-handler="RegenerateSecret"
+                onclick="return confirm('確定要重新產生 Secret 嗎？舊的 Secret 將失效。')">
+            重新產生 Secret
+        </button>
+    }
+
+    <a class="btn btn-secondary" asp-page="Index">取消</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

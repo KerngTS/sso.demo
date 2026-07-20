@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SSO</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/AuthServer.styles.css" asp-append-version="true" />
+</head>
+<body>
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm">
+            <div class="container">
+                <a class="navbar-brand" asp-page="/Index" style="font-weight:700;letter-spacing:-0.01em;">🔐 SSO</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                            @if (User.IsInRole("admin") || User.IsInRole("UserManager") || User.IsInRole("ClientManager") || User.IsInRole("ScopeManager"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Index">Dashboard</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("admin") || User.IsInRole("UserManager") || User.IsInRole("ClientManager") || User.IsInRole("ScopeManager"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">管理</a>
+                                <ul class="dropdown-menu">
+                                    @if (User.IsInRole("admin") || User.IsInRole("UserManager"))
+                                    {
+                                        <li><a class="dropdown-item" asp-page="/Admin/Users/Index">👥 用戶管理</a></li>
+                                    }
+                                    @if (User.IsInRole("admin") || User.IsInRole("ClientManager"))
+                                    {
+                                        <li><a class="dropdown-item" asp-page="/Admin/Clients/Index">🔗 Client 管理</a></li>
+                                    }
+                                    @if (User.IsInRole("admin") || User.IsInRole("ScopeManager"))
+                                    {
+                                        <li><a class="dropdown-item" asp-page="/Admin/Scopes/Index">🎯 Scope 管理</a></li>
+                                    }
+                                    @if (User.IsInRole("admin"))
+                                    {
+                                        <li><hr class="dropdown-divider" /></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/Roles/Index">🔑 角色管理</a></li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+}
+    <div class="@(User.Identity?.IsAuthenticated == true ? "container" : "login-page")">
+        <main role="main" class="@(User.Identity?.IsAuthenticated == true ? "pb-3" : "")">
+            @RenderBody()
+        </main>
+    </div>
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <footer class="border-top">
+        <div class="container">
+            &copy; 2026 SSO Auth Server
+        </div>
+    </footer>
+}
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

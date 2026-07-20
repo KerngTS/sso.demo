@@ -1,0 +1,69 @@
+### ==========================================
+### SSO.Auth Server 測試
+### Client Credentials + Refresh Token + Auth Code
+### ==========================================
+
+### ─── Client Credentials ──────────────────────
+### 1. 取得 Access Token
+POST https://localhost:7138/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials
+&client_id=dotnet-webapi
+&client_secret=LD8I1WziPQxReii6Kh5Ink+ViNtiaNfLwtqYLiVAMG0=
+&scope=api
+
+### 2. 用 Token 呼叫 UserInfo
+GET https://localhost:7138/connect/userinfo
+Authorization: Bearer {{access_token}}
+
+### ─── Refresh Token 測試 ─────────────────────
+### 步驟 A：先在瀏覽器取得授權碼，帶 offline_access scope
+### 瀏覽器開啟：
+###   https://localhost:7138/connect/authorize
+###   ?client_id=blazor-wasm
+###   &redirect_uri=http://localhost:5000/authentication/login-callback
+###   &response_type=code
+###   &scope=openid%20profile%20api%20offline_access
+###   &state=test123
+###   &code_challenge=TEST_CHALLENGE
+###   &code_challenge_method=S256
+###
+### 步驟 B：用授權碼交換 Token（會得到 access_token + refresh_token）
+###   將 <code> 和 <code_verifier> 替換為實際值
+POST https://localhost:7138/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&client_id=blazor-wasm
+&redirect_uri=http://localhost:5000/authentication/login-callback
+&code=<code>
+&code_verifier=TEST_CHALLENGE
+
+### 步驟 C：用 refresh_token 換取新的 access_token
+###   將 <refresh_token> 替換為步驟 B 回傳的 refresh_token
+POST https://localhost:7138/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token
+&client_id=blazor-wasm
+&refresh_token=<refresh_token>
+
+### 步驟 D：重複步驟 C（用舊的 refresh_token 再次請求 → 應失敗，token-rotation）
+POST https://localhost:7138/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token
+&client_id=blazor-wasm
+&refresh_token=<old_refresh_token>
+
+### ─── 授權端點快速連結 ────────────────────────
+### （貼到瀏覽器）
+GET https://localhost:7138/connect/authorize
+    ?client_id=blazor-wasm
+    &redirect_uri=http://localhost:5000/authentication/login-callback
+    &response_type=code
+    &scope=openid%20profile%20api%20offline_access
+    &state=test-state
+    &code_challenge=test_challenge
+    &code_challenge_method=S256

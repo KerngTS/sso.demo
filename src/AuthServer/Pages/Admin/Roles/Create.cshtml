@@ -1,0 +1,27 @@
+@page "/Admin/Roles/Create"
+@model AuthServer.Pages.Admin.Roles.CreateModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin")]
+@{
+    ViewData["Title"] = "新增角色";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="Input.Name" class="form-label">角色名稱</label>
+        <input asp-for="Input.Name" class="form-control" placeholder="例: Developer, Manager, Reader" />
+        <span asp-validation-for="Input.Name" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">建立</button>
+    <a class="btn btn-secondary" asp-page="Index">取消</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

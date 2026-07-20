@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AuthServer/AuthServer.csproj" />
+    <Project Path="src/BlazorWasm/BlazorWasm.csproj" />
+    <Project Path="src/WebApi/WebApi.csproj" />
+  </Folder>
+</Solution>

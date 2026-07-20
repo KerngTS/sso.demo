@@ -1,0 +1,23 @@
+﻿<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <div class="text-center mt-5">
+                            <h2>請先登入</h2>
+                            <p>您需要登入才能訪問此頁面。</p>
+                            <a class="btn btn-primary" href="authentication/login">登入</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-center mt-5">您沒有權限訪問此頁面。</p>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
+</CascadingAuthenticationState>

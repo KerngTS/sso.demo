@@ -1,0 +1,39 @@
+@page "/Admin/Scopes/Create"
+@model AuthServer.Pages.Admin.Scopes.CreateModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,ScopeManager")]
+@{
+    ViewData["Title"] = "新增 Scope";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="Input.Name" class="form-label">Scope 名稱</label>
+        <input asp-for="Input.Name" class="form-control" placeholder="例: api, openid, profile" />
+        <span asp-validation-for="Input.Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.DisplayName" class="form-label">顯示名稱</label>
+        <input asp-for="Input.DisplayName" class="form-control" placeholder="例: API 存取" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Description" class="form-label">描述</label>
+        <input asp-for="Input.Description" class="form-control" placeholder="例: 允許存取受保護的 API 資源" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Resources" class="form-label">資源 (逗號分隔)</label>
+        <input asp-for="Input.Resources" class="form-control" placeholder="例: resource-server" />
+    </div>
+    <button type="submit" class="btn btn-primary">建立</button>
+    <a class="btn btn-secondary" asp-page="Index">取消</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

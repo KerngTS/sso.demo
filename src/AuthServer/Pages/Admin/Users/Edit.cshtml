@@ -1,0 +1,75 @@
+@page "/Admin/Users/Edit/{id}"
+@model AuthServer.Pages.Admin.Users.EditModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,UserManager")]
+@{
+    ViewData["Title"] = "編輯用戶";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert @(Model.IsError ? "alert-danger" : "alert-success")">@Model.Message</div>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <h5 class="mt-3">基本資訊</h5>
+        <form method="post">
+            <input type="hidden" asp-for="Input.Id" />
+            <div class="mb-3">
+                <label class="form-label">帳號</label>
+                <input class="form-control" value="@Model.Input.UserName" readonly />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label">電子郵件</label>
+                <input asp-for="Input.Email" class="form-control" type="email" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <h5 class="mt-4">角色指派</h5>
+            <div class="mb-3">
+                @foreach (var role in Model.AvailableRoles)
+                {
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="SelectedRoles" value="@role" id="r_@role"
+                               checked="@Model.Input.Roles.Contains(role)" />
+                        <label class="form-check-label" for="r_@role">@role</label>
+                    </div>
+                }
+            </div>
+
+            <h5 class="mt-4">帳號狀態</h5>
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" asp-for="Input.IsDisabled" />
+                    <label class="form-check-label" asp-for="Input.IsDisabled">禁用此帳號</label>
+                </div>
+                @if (Model.Input.Id == Model.CurrentUserId)
+                {
+                    <div class="form-text text-danger">不可禁用自己的帳號。</div>
+                }
+            </div>
+
+            <button type="submit" class="btn btn-primary">儲存</button>
+            <a class="btn btn-secondary" asp-page="Index">取消</a>
+        </form>
+
+        <h5 class="mt-4">重設密碼</h5>
+        <form method="post" asp-page-handler="ResetPassword">
+            <input type="hidden" name="Input.Id" value="@Model.Input.Id" />
+            <div class="row">
+                <div class="col-md-6">
+                    <input name="NewPassword" class="form-control" type="password" placeholder="輸入新密碼（至少 6 字元）" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('確定要重設密碼嗎？')">重設密碼</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

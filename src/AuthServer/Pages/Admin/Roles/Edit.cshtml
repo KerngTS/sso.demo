@@ -1,0 +1,28 @@
+@page "/Admin/Roles/Edit/{name}"
+@model AuthServer.Pages.Admin.Roles.EditModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin")]
+@{
+    ViewData["Title"] = $"編輯角色: {Model.Input.OriginalName}";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert @(Model.IsError ? "alert-danger" : "alert-success")">@Model.Message</div>
+}
+
+<form method="post">
+    <input type="hidden" asp-for="Input.OriginalName" />
+    <div class="mb-3">
+        <label asp-for="Input.Name" class="form-label">角色名稱</label>
+        <input asp-for="Input.Name" class="form-control" />
+        <span asp-validation-for="Input.Name" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">儲存</button>
+    <a class="btn btn-secondary" asp-page="Index">取消</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

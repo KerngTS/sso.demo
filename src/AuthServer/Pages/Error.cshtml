@@ -1,0 +1,16 @@
+﻿@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "錯誤";
+}
+
+<h1 style="color:#fca5a5;">錯誤</h1>
+<h2 style="color:var(--muted);font-size:18px;">處理請求時發生錯誤。</h2>
+
+@if (Model.ShowRequestId)
+{
+    <p style="color:var(--muted);margin-top:16px;">
+        <strong>Request ID:</strong> <code style="color:var(--accent);">@Model.RequestId</code>
+    </p>
+}
+</p>

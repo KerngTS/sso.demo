@@ -1,0 +1,43 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="mb-1" style="font-weight:700;">@ViewData["Title"]</h2>
+        <p style="color:var(--muted);font-size:14px;">SSO 授權伺服器概覽</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-sm-6 col-xl-3">
+        <a asp-page="/Admin/Users/Index" class="stat-card">
+            <div class="stat-icon" style="background:rgba(99,102,241,0.15);color:#818cf8;">👥</div>
+            <div class="stat-value">@Model.UserCount</div>
+            <div class="stat-label">用戶總數</div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-page="/Admin/Roles/Index" class="stat-card">
+            <div class="stat-icon" style="background:rgba(236,72,153,0.15);color:#f472b6;">🔑</div>
+            <div class="stat-value">@Model.RoleCount</div>
+            <div class="stat-label">角色總數</div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-page="/Admin/Clients/Index" class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,211,238,0.15);color:#22d3ee;">🔗</div>
+            <div class="stat-value">@Model.ClientCount</div>
+            <div class="stat-label">Client 應用</div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-page="/Admin/Scopes/Index" class="stat-card">
+            <div class="stat-icon" style="background:rgba(250,204,21,0.15);color:#facc15;">🎯</div>
+            <div class="stat-value">@Model.ScopeCount</div>
+            <div class="stat-label">Scope 權限</div>
+        </a>
+    </div>
+</div>

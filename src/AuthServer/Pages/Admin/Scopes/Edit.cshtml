@@ -1,0 +1,40 @@
+@page "/Admin/Scopes/Edit/{name}"
+@model AuthServer.Pages.Admin.Scopes.EditModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,ScopeManager")]
+@{
+    ViewData["Title"] = $"編輯 Scope: {Model.Input.Name}";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="post">
+    <input type="hidden" asp-for="Input.OriginalName" />
+    <div class="mb-3">
+        <label asp-for="Input.Name" class="form-label">Scope 名稱</label>
+        <input asp-for="Input.Name" class="form-control" />
+        <span asp-validation-for="Input.Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.DisplayName" class="form-label">顯示名稱</label>
+        <input asp-for="Input.DisplayName" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Description" class="form-label">描述</label>
+        <input asp-for="Input.Description" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Resources" class="form-label">資源 (逗號分隔)</label>
+        <input asp-for="Input.Resources" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">儲存</button>
+    <a class="btn btn-secondary" asp-page="Index">取消</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

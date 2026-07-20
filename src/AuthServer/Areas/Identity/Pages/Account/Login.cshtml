@@ -1,0 +1,45 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "登入";
+}
+
+<div class="login-card">
+    <div class="login-logo">
+        <div class="login-logo-icon">🔐</div>
+        <div>
+            <div class="login-logo-text">SSO</div>
+            <div class="login-logo-sub">AUTHORIZATION SERVER</div>
+        </div>
+    </div>
+
+    <form id="account" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 validation-summary-errors" role="alert"></div>
+
+        <div class="field">
+            <label asp-for="Input.Email">Email</label>
+            <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="admin@sso.local" autofocus />
+            <span asp-validation-for="Input.Email" class="text-danger" style="font-size:12px;"></span>
+        </div>
+
+        <div class="field">
+            <label asp-for="Input.Password">密碼</label>
+            <input asp-for="Input.Password" class="form-control" autocomplete="current-password" placeholder="••••••••" />
+            <span asp-validation-for="Input.Password" class="text-danger" style="font-size:12px;"></span>
+        </div>
+
+        <div class="login-options">
+            <div class="form-check">
+                <input class="form-check-input" asp-for="Input.RememberMe" style="margin-top:2px;" />
+                <label class="form-check-label" asp-for="Input.RememberMe" style="font-size:13px;"></label>
+            </div>
+            <a class="forgot-link" href="#">忘記密碼？</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary">登 入</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
