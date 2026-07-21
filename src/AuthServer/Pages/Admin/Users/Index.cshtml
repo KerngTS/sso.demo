@@ -9,14 +9,14 @@
 
 <form method="get" class="row g-2 mb-3 align-items-end">
     <div class="col-md-3">
-        <label class="form-label" style="font-size:12px;">關鍵字 (帳號/Email/工號)</label>
+        <label class="form-label" style="font-size:12px; color: var(--fg) !important;">關鍵字 (帳號/Email/工號)</label>
         <input name="search" class="form-control" placeholder="搜尋帳號或 Email..." value="@Model.Search" />
     </div>
 
     @if (Model.AvailableBGs.Count > 0)
     {
         <div class="col-md-2">
-            <label class="form-label" style="font-size:12px;">事業群 (BG)</label>
+            <label class="form-label" style="font-size:12px; color: var(--fg) !important;">事業群 (BG)</label>
             <select name="bgFilter" class="form-select" asp-for="BgFilter">
                 <option value="">全部</option>
                 @foreach (var bg in Model.AvailableBGs)
@@ -30,7 +30,7 @@
     @if (Model.AvailableBUs.Count > 0)
     {
         <div class="col-md-2">
-            <label class="form-label" style="font-size:12px;">事業處 (BU)</label>
+            <label class="form-label" style="font-size:12px; color: var(--fg) !important;">事業處 (BU)</label>
             <select name="buFilter" class="form-select" asp-for="BuFilter">
                 <option value="">全部</option>
                 @foreach (var bu in Model.AvailableBUs)
@@ -69,9 +69,9 @@
             <tr>
                 <td><code>@user.UserName</code></td>
                 <td>@user.Email</td>
-                <td><span>@(user.BG ?? "—")</span></td>
-                <td><span>@(user.BU ?? "—")</span></td>
-                <td><code>@(user.EMP_CD ?? "—")</code></td>
+                <td><span style="color: var(--fg) !important;">@(user.BG ?? "—")</span></td>
+                <td><span style="color: var(--fg) !important;">@(user.BU ?? "—")</span></td>
+                <td><code style="color: var(--fg) !important;">@(user.EMP_CD ?? "—")</code></td>
                 <td>
                     @foreach (var role in user.Roles)
                     {

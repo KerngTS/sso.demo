@@ -10,6 +10,17 @@
     --btn-text: #0b0e14;
 }
 
+/* 強制覆蓋 Bootstrap 內建的 text-muted 顏色以利暗色主題對比 */
+.text-muted {
+    color: var(--muted) !important;
+}
+
+/* 確保所有標籤文字可讀性 */
+.form-label, label {
+    color: var(--fg) !important;
+    font-weight: 500;
+}
+
 html { font-size: 14px; }
 @media (min-width: 768px) { html { font-size: 16px; } }
 html { position: relative; min-height: 100%; }
@@ -102,7 +113,6 @@ main.container, .container > main { position: relative; z-index: 1; padding-top:
     box-shadow: 0 0 0 3px rgba(0,180,216,0.18);
     color: var(--fg);
 }
-.form-label { color: var(--muted); font-weight: 500; }
 
 .btn-primary {
     background: linear-gradient(135deg, var(--accent), color-mix(in oklch, #00b4d8 70%, #ff7b00));
