@@ -8,7 +8,7 @@ using AuthServer.Data;
 
 namespace AuthServer.Pages.Admin.Users;
 
-[Authorize(Roles = "admin,UserManager")]
+[Authorize(Roles = "admin,UserManager,userBGMgr,userBUMgr")]
 public class EditModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -33,6 +33,9 @@ public class EditModel : PageModel
     public bool IsError { get; set; }
     public string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
 
+    public bool IsBgReadOnly { get; set; }
+    public bool IsBuReadOnly { get; set; }
+
     public async Task<IActionResult> OnGetAsync(string id)
     {
         var user = await _userManager.FindByIdAsync(id);
@@ -55,6 +58,9 @@ public class EditModel : PageModel
         {
             return Forbid();
         }
+
+        IsBgReadOnly = isBgAdmin || isBuAdmin;
+        IsBuReadOnly = isBuAdmin;
 
         // 從 TempData 讀取上一個請求的訊息
         Message = TempData["Message"] as string;
@@ -117,9 +123,19 @@ public class EditModel : PageModel
             user.NormalizedUserName = _userManager.NormalizeName(Input.Email);
         }
 
-        // 更新組織屬性
-        user.BG = Input.BG?.Trim();
-        user.BU = Input.BU?.Trim();
+        // 更新組織屬性 (根據操作者權限限制其可以編輯的屬性)
+        if (isGlobalAdmin)
+        {
+            user.BG = Input.BG?.Trim();
+            user.BU = Input.BU?.Trim();
+        }
+        else if (isBgAdmin)
+        {
+            // BG 管理員不可修改使用者的 BG，只能變更 BU 
+            user.BU = Input.BU?.Trim();
+        }
+        // BU 管理員 (isBuAdmin) 不可修改任何組織屬性 (BG 與 BU 皆被鎖定)
+
         user.EMP_CD = Input.EMP_CD?.Trim();
 
         await _userManager.UpdateAsync(user);

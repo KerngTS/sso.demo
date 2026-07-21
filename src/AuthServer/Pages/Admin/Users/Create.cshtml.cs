@@ -7,7 +7,7 @@ using AuthServer.Data;
 
 namespace AuthServer.Pages.Admin.Users;
 
-[Authorize(Roles = "admin,UserManager")]
+[Authorize(Roles = "admin,UserManager,userBGMgr,userBUMgr")]
 public class CreateModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -30,17 +30,64 @@ public class CreateModel : PageModel
     public List<string> AvailableRoles { get; set; } = new();
     public string? ErrorMessage { get; set; }
 
-    public void OnGet()
+    public bool IsBgReadOnly { get; set; }
+    public bool IsBuReadOnly { get; set; }
+
+    public async Task OnGetAsync()
     {
         AvailableRoles = _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name!).ToList();
+
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser != null)
+        {
+            var isBgAdmin = await _userManager.IsInRoleAsync(currentUser, "userBGMgr");
+            var isBuAdmin = await _userManager.IsInRoleAsync(currentUser, "userBUMgr");
+
+            if (isBgAdmin)
+            {
+                Input.BG = currentUser.BG;
+                IsBgReadOnly = true;
+            }
+            else if (isBuAdmin)
+            {
+                Input.BG = currentUser.BG;
+                Input.BU = currentUser.BU;
+                IsBgReadOnly = true;
+                IsBuReadOnly = true;
+            }
+        }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)
         {
-            LoadRoles();
+            await LoadRolesAsync();
             return Page();
+        }
+
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser == null) return Forbid();
+
+        var isGlobalAdmin = await _userManager.IsInRoleAsync(currentUser, "admin") || 
+                            await _userManager.IsInRoleAsync(currentUser, "UserManager");
+        var isBgAdmin = await _userManager.IsInRoleAsync(currentUser, "userBGMgr");
+        var isBuAdmin = await _userManager.IsInRoleAsync(currentUser, "userBUMgr");
+
+        // 🛡️ 新增用戶組織屬性防禦邏輯 (Create Security Gate)
+        var finalBG = Input.BG?.Trim();
+        var finalBU = Input.BU?.Trim();
+
+        if (isBgAdmin)
+        {
+            // BG 管理員：強制限制建立的使用者只能屬於其所屬 BG
+            finalBG = currentUser.BG;
+        }
+        else if (isBuAdmin)
+        {
+            // BU 管理員：強制限制建立的使用者必須同時屬於其所屬 BG 與 BU
+            finalBG = currentUser.BG;
+            finalBU = currentUser.BU;
         }
 
         var user = new ApplicationUser
@@ -48,8 +95,8 @@ public class CreateModel : PageModel
             UserName = Input.Email,  // 登入時使用 Email 作為帳號
             Email = Input.Email,
             EmailConfirmed = true,
-            BG = Input.BG?.Trim(),
-            BU = Input.BU?.Trim(),
+            BG = finalBG,
+            BU = finalBU,
             EMP_CD = Input.EMP_CD?.Trim()
         };
 
@@ -58,7 +105,7 @@ public class CreateModel : PageModel
         {
             ErrorMessage = string.Join("；", result.Errors.Select(e => e.Description));
             _logger.LogWarning("管理員 {AdminUser} 創建用戶失敗: {Error}", User.Identity?.Name, ErrorMessage);
-            LoadRoles();
+            await LoadRolesAsync();
             return Page();
         }
 
@@ -71,9 +118,17 @@ public class CreateModel : PageModel
         return RedirectToPage("Index");
     }
 
-    private void LoadRoles()
+    private async Task LoadRolesAsync()
     {
         AvailableRoles = _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name!).ToList();
+
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser != null)
+        {
+            IsBgReadOnly = await _userManager.IsInRoleAsync(currentUser, "userBGMgr") || 
+                           await _userManager.IsInRoleAsync(currentUser, "userBUMgr");
+            IsBuReadOnly = await _userManager.IsInRoleAsync(currentUser, "userBUMgr");
+        }
     }
 
     public class UserInput

@@ -1,6 +1,6 @@
 @page "/Admin/Users/Create"
 @model AuthServer.Pages.Admin.Users.CreateModel
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,UserManager")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,UserManager,userBGMgr,userBUMgr")]
 @{
     ViewData["Title"] = "新增用戶";
 }
@@ -29,12 +29,12 @@
     <div class="row mb-3">
         <div class="col-md-4">
             <label asp-for="Input.BG" class="form-label">事業群 (BG)</label>
-            <input asp-for="Input.BG" class="form-control" placeholder="例: BG_Foxlink" />
+            <input asp-for="Input.BG" class="form-control" placeholder="例: BG_Foxlink" readonly="@Model.IsBgReadOnly" style="@(Model.IsBgReadOnly ? "opacity:0.65; cursor:not-allowed;" : "")" />
             <span asp-validation-for="Input.BG" class="text-danger"></span>
         </div>
         <div class="col-md-4">
             <label asp-for="Input.BU" class="form-label">事業處 (BU)</label>
-            <input asp-for="Input.BU" class="form-control" placeholder="例: BU_SSO" />
+            <input asp-for="Input.BU" class="form-control" placeholder="例: BU_SSO" readonly="@Model.IsBuReadOnly" style="@(Model.IsBuReadOnly ? "opacity:0.65; cursor:not-allowed;" : "")" />
             <span asp-validation-for="Input.BU" class="text-danger"></span>
         </div>
         <div class="col-md-4">
