@@ -15,8 +15,8 @@ builder.Services.AddOidcAuthentication(options =>
     builder.Configuration.Bind("Oidc", options.ProviderOptions);
 
     // 手動設定（與 appsettings.json 等效）
-    options.ProviderOptions.Authority = "https://localhost:7138";
-    //options.ProviderOptions.Authority = "https://192.168.78.153:5998";
+    //options.ProviderOptions.Authority = "https://localhost:7138";
+    options.ProviderOptions.Authority = "https://192.168.78.153:5998";
     options.ProviderOptions.ClientId = "blazor-wasm";
     options.ProviderOptions.ResponseType = "code";
     options.ProviderOptions.DefaultScopes.Clear();
