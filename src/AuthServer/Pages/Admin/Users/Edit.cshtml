@@ -27,6 +27,24 @@
                 <span asp-validation-for="Input.Email" class="text-danger"></span>
             </div>
 
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Input.BG" class="form-label">事業群 (BG)</label>
+                    <input asp-for="Input.BG" class="form-control" />
+                    <span asp-validation-for="Input.BG" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.BU" class="form-label">事業處 (BU)</label>
+                    <input asp-for="Input.BU" class="form-control" />
+                    <span asp-validation-for="Input.BU" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.EMP_CD" class="form-label">員工工號 (EMP_CD)</label>
+                    <input asp-for="Input.EMP_CD" class="form-control" />
+                    <span asp-validation-for="Input.EMP_CD" class="text-danger"></span>
+                </div>
+            </div>
+
             <h5 class="mt-4">角色指派</h5>
             <div class="mb-3">
                 @foreach (var role in Model.AvailableRoles)

@@ -14,15 +14,33 @@
 
 <form method="post">
     <div class="row mb-3">
-        <div class="col-md-8">
+        <div class="col-md-6">
             <label asp-for="Input.Email" class="form-label">電子郵件（同時作為登入帳號）</label>
             <input asp-for="Input.Email" class="form-control" type="email" placeholder="user@example.com" />
             <span asp-validation-for="Input.Email" class="text-danger"></span>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
             <label asp-for="Input.Password" class="form-label">密碼</label>
             <input asp-for="Input.Password" class="form-control" type="password" />
             <span asp-validation-for="Input.Password" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label asp-for="Input.BG" class="form-label">事業群 (BG)</label>
+            <input asp-for="Input.BG" class="form-control" placeholder="例: BG_Foxlink" />
+            <span asp-validation-for="Input.BG" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.BU" class="form-label">事業處 (BU)</label>
+            <input asp-for="Input.BU" class="form-control" placeholder="例: BU_SSO" />
+            <span asp-validation-for="Input.BU" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.EMP_CD" class="form-label">員工工號 (EMP_CD)</label>
+            <input asp-for="Input.EMP_CD" class="form-control" placeholder="例: EMP001" />
+            <span asp-validation-for="Input.EMP_CD" class="text-danger"></span>
         </div>
     </div>
 

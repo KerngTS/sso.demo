@@ -4,17 +4,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using AuthServer.Data;
 
 namespace AuthServer.Pages.Admin.Users;
 
 [Authorize(Roles = "admin,UserManager")]
 public class EditModel : PageModel
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<EditModel> _logger;
 
-    public EditModel(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager, ILogger<EditModel> logger)
+    public EditModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ILogger<EditModel> logger)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -37,6 +38,24 @@ public class EditModel : PageModel
         var user = await _userManager.FindByIdAsync(id);
         if (user == null) return NotFound();
 
+        // 🛡️ 數據防越權檢查 (Access Security Gate)
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser == null) return Forbid();
+
+        var isGlobalAdmin = await _userManager.IsInRoleAsync(currentUser, "admin") || 
+                            await _userManager.IsInRoleAsync(currentUser, "UserManager");
+        var isBgAdmin = await _userManager.IsInRoleAsync(currentUser, "userBGMgr");
+        var isBuAdmin = await _userManager.IsInRoleAsync(currentUser, "userBUMgr");
+
+        if (isBgAdmin && user.BG != currentUser.BG)
+        {
+            return Forbid();
+        }
+        if (isBuAdmin && (user.BG != currentUser.BG || user.BU != currentUser.BU))
+        {
+            return Forbid();
+        }
+
         // 從 TempData 讀取上一個請求的訊息
         Message = TempData["Message"] as string;
         IsError = TempData["IsError"] as string == "true";
@@ -49,7 +68,10 @@ public class EditModel : PageModel
             UserName = user.UserName ?? "",
             Email = user.Email,
             Roles = (await _userManager.GetRolesAsync(user)).ToList(),
-            IsDisabled = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow
+            IsDisabled = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow,
+            BG = user.BG,
+            BU = user.BU,
+            EMP_CD = user.EMP_CD
         };
 
         return Page();
@@ -59,6 +81,24 @@ public class EditModel : PageModel
     {
         var user = await _userManager.FindByIdAsync(Input.Id);
         if (user == null) return NotFound();
+
+        // 🛡️ 數據防越權檢查 (Write Security Gate)
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser == null) return Forbid();
+
+        var isGlobalAdmin = await _userManager.IsInRoleAsync(currentUser, "admin") || 
+                            await _userManager.IsInRoleAsync(currentUser, "UserManager");
+        var isBgAdmin = await _userManager.IsInRoleAsync(currentUser, "userBGMgr");
+        var isBuAdmin = await _userManager.IsInRoleAsync(currentUser, "userBUMgr");
+
+        if (isBgAdmin && user.BG != currentUser.BG)
+        {
+            return Forbid();
+        }
+        if (isBuAdmin && (user.BG != currentUser.BG || user.BU != currentUser.BU))
+        {
+            return Forbid();
+        }
 
         // 禁止禁用自己的帳號
         if (Input.IsDisabled && Input.Id == CurrentUserId)
@@ -75,8 +115,14 @@ public class EditModel : PageModel
             user.UserName = Input.Email;
             user.NormalizedEmail = _userManager.NormalizeEmail(Input.Email);
             user.NormalizedUserName = _userManager.NormalizeName(Input.Email);
-            await _userManager.UpdateAsync(user);
         }
+
+        // 更新組織屬性
+        user.BG = Input.BG?.Trim();
+        user.BU = Input.BU?.Trim();
+        user.EMP_CD = Input.EMP_CD?.Trim();
+
+        await _userManager.UpdateAsync(user);
 
         // 更新禁用狀態
         if (Input.IsDisabled)
@@ -99,8 +145,8 @@ public class EditModel : PageModel
         if (toRemove.Count > 0)
             await _userManager.RemoveFromRolesAsync(user, toRemove);
 
-        _logger.LogInformation("管理員 {AdminUser} 更新用戶 {TargetUserId} (Email={Email}, IsDisabled={IsDisabled})",
-            User.Identity?.Name, Input.Id, Input.Email, Input.IsDisabled);
+        _logger.LogInformation("管理員 {AdminUser} 更新用戶 {TargetUserId} (Email={Email}, IsDisabled={IsDisabled}, BG={BG}, BU={BU}, EMP_CD={EMP_CD})",
+            User.Identity?.Name, Input.Id, Input.Email, Input.IsDisabled, user.BG, user.BU, user.EMP_CD);
 
         TempData["Message"] = "更新成功。";
         TempData["IsError"] = "false";
@@ -111,6 +157,24 @@ public class EditModel : PageModel
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user == null) return NotFound();
+
+        // 🛡️ 數據防越權檢查 (Password Reset Security Gate)
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser == null) return Forbid();
+
+        var isGlobalAdmin = await _userManager.IsInRoleAsync(currentUser, "admin") || 
+                            await _userManager.IsInRoleAsync(currentUser, "UserManager");
+        var isBgAdmin = await _userManager.IsInRoleAsync(currentUser, "userBGMgr");
+        var isBuAdmin = await _userManager.IsInRoleAsync(currentUser, "userBUMgr");
+
+        if (isBgAdmin && user.BG != currentUser.BG)
+        {
+            return Forbid();
+        }
+        if (isBuAdmin && (user.BG != currentUser.BG || user.BU != currentUser.BU))
+        {
+            return Forbid();
+        }
 
         if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
         {
@@ -139,7 +203,7 @@ public class EditModel : PageModel
         return RedirectToPage(new { id });
     }
 
-    private async Task LoadFormDataAsync(IdentityUser user)
+    private async Task LoadFormDataAsync(ApplicationUser user)
     {
         AvailableRoles = _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name!).ToList();
 
@@ -149,7 +213,10 @@ public class EditModel : PageModel
             UserName = user.UserName ?? "",
             Email = user.Email,
             Roles = (await _userManager.GetRolesAsync(user)).ToList(),
-            IsDisabled = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow
+            IsDisabled = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow,
+            BG = user.BG,
+            BU = user.BU,
+            EMP_CD = user.EMP_CD
         };
     }
 
@@ -164,5 +231,17 @@ public class EditModel : PageModel
 
         public List<string> Roles { get; set; } = new();
         public bool IsDisabled { get; set; }
+
+        [Display(Name = "事業群 (BG)")]
+        [MaxLength(50)]
+        public string? BG { get; set; }
+
+        [Display(Name = "事業處 (BU)")]
+        [MaxLength(50)]
+        public string? BU { get; set; }
+
+        [Display(Name = "員工工號 (EMP_CD)")]
+        [MaxLength(50)]
+        public string? EMP_CD { get; set; }
     }
 }

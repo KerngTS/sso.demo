@@ -8,6 +8,7 @@ using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using System.Security.Claims;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using AuthServer.Data;
 
 namespace AuthServer.Controllers;
 
@@ -18,14 +19,14 @@ namespace AuthServer.Controllers;
 [Route("connect")]
 public class AuthorizationController : Controller
 {
-    private readonly SignInManager<IdentityUser> _signInManager;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IOpenIddictTokenManager _tokenManager;
     private readonly ILogger<AuthorizationController> _logger;
 
     public AuthorizationController(
-        SignInManager<IdentityUser> signInManager,
-        UserManager<IdentityUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        UserManager<ApplicationUser> userManager,
         IOpenIddictTokenManager tokenManager,
         ILogger<AuthorizationController> logger)
     {

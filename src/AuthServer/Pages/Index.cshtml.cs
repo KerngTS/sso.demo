@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
+using AuthServer.Data;
 
 namespace AuthServer.Pages;
 
 [Authorize(Roles = "admin,UserManager,ClientManager,ScopeManager")]
 public class IndexModel : PageModel
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IOpenIddictApplicationManager _appManager;
     private readonly IOpenIddictScopeManager _scopeManager;
@@ -21,7 +22,7 @@ public class IndexModel : PageModel
     public int ScopeCount { get; set; }
 
     public IndexModel(
-        UserManager<IdentityUser> userManager,
+        UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         IOpenIddictApplicationManager appManager,
         IOpenIddictScopeManager scopeManager)

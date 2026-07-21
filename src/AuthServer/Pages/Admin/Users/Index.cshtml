@@ -1,18 +1,48 @@
 @page "/Admin/Users"
 @model AuthServer.Pages.Admin.Users.IndexModel
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,UserManager")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,UserManager,userBGMgr,userBUMgr")]
 @{
     ViewData["Title"] = "用戶管理";
 }
 
 <h2>@ViewData["Title"]</h2>
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-md-5">
+<form method="get" class="row g-2 mb-3 align-items-end">
+    <div class="col-md-3">
+        <label class="form-label text-muted" style="font-size:12px;">關鍵字 (帳號/Email/工號)</label>
         <input name="search" class="form-control" placeholder="搜尋帳號或 Email..." value="@Model.Search" />
     </div>
+
+    @if (Model.AvailableBGs.Count > 0)
+    {
+        <div class="col-md-2">
+            <label class="form-label text-muted" style="font-size:12px;">事業群 (BG)</label>
+            <select name="bgFilter" class="form-select" asp-for="BgFilter">
+                <option value="">全部</option>
+                @foreach (var bg in Model.AvailableBGs)
+                {
+                    <option value="@bg">@bg</option>
+                }
+            </select>
+        </div>
+    }
+
+    @if (Model.AvailableBUs.Count > 0)
+    {
+        <div class="col-md-2">
+            <label class="form-label text-muted" style="font-size:12px;">事業處 (BU)</label>
+            <select name="buFilter" class="form-select" asp-for="BuFilter">
+                <option value="">全部</option>
+                @foreach (var bu in Model.AvailableBUs)
+                {
+                    <option value="@bu">@bu</option>
+                }
+            </select>
+        </div>
+    }
+
     <div class="col-auto">
-        <button type="submit" class="btn btn-outline-primary">搜尋</button>
+        <button type="submit" class="btn btn-outline-primary">篩選</button>
         <a class="btn btn-outline-secondary" asp-page="Index">清除</a>
     </div>
     <div class="col-auto ms-auto">
@@ -25,6 +55,9 @@
         <tr>
             <th>帳號</th>
             <th>電子郵件</th>
+            <th>事業群(BG)</th>
+            <th>事業處(BU)</th>
+            <th>工號(EMP_CD)</th>
             <th>角色</th>
             <th>狀態</th>
             <th style="width:100px">操作</th>
@@ -36,6 +69,9 @@
             <tr>
                 <td><code>@user.UserName</code></td>
                 <td>@user.Email</td>
+                <td><span class="text-muted">@(user.BG ?? "—")</span></td>
+                <td><span class="text-muted">@(user.BU ?? "—")</span></td>
+                <td><code>@(user.EMP_CD ?? "—")</code></td>
                 <td>
                     @foreach (var role in user.Roles)
                     {
@@ -65,13 +101,13 @@
     <nav>
         <ul class="pagination justify-content-center">
             <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
-                <a class="page-link" asp-page="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page - 1)">← 上一頁</a>
+                <a class="page-link" asp-page="Index" asp-route-search="@Model.Search" asp-route-bgFilter="@Model.BgFilter" asp-route-buFilter="@Model.BuFilter" asp-route-page="@(Model.Page - 1)">← 上一頁</a>
             </li>
             <li class="page-item disabled">
                 <span class="page-link">第 @Model.Page / @Model.TotalPages 頁</span>
             </li>
             <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" asp-page="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)">下一頁 →</a>
+                <a class="page-link" asp-page="Index" asp-route-search="@Model.Search" asp-route-bgFilter="@Model.BgFilter" asp-route-buFilter="@Model.BuFilter" asp-route-page="@(Model.Page + 1)">下一頁 →</a>
             </li>
         </ul>
     </nav>

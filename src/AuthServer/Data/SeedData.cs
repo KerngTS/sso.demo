@@ -145,11 +145,12 @@ public static class SeedData
 
     private static async Task CreateAdminUserAsync(IServiceProvider serviceProvider, ILogger logger)
     {
-        var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-        // 建立所有管理角色
-        foreach (var roleName in new[] { "admin", "UserManager", "ClientManager", "ScopeManager" })
+        // 建立所有管理角色（新增 userBGMgr、userBUMgr）
+        var rolesToCreate = new[] { "admin", "UserManager", "ClientManager", "ScopeManager", "userBGMgr", "userBUMgr" };
+        foreach (var roleName in rolesToCreate)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
@@ -161,11 +162,14 @@ public static class SeedData
         const string adminEmail = "admin@sso.local";
         if (await userManager.FindByEmailAsync(adminEmail) is null)
         {
-            var admin = new IdentityUser
+            var admin = new ApplicationUser
             {
                 UserName = adminEmail,
                 Email = adminEmail,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                BG = "BG_Foxlink",
+                BU = "BU_SSO",
+                EMP_CD = "ADMIN001"
             };
 
             var result = await userManager.CreateAsync(admin, "Admin123!");
@@ -175,6 +179,50 @@ public static class SeedData
                 await userManager.AddToRolesAsync(admin,
                     new[] { "admin", "UserManager", "ClientManager", "ScopeManager" });
                 logger.LogInformation("種子資料: 創建管理員 {Email} (角色: admin, UserManager, ClientManager, ScopeManager)", adminEmail);
+            }
+        }
+
+        // 建立測試事業群管理員 (bg-mgr)
+        const string bgEmail = "bg-mgr@sso.local";
+        if (await userManager.FindByEmailAsync(bgEmail) is null)
+        {
+            var bgUser = new ApplicationUser
+            {
+                UserName = bgEmail,
+                Email = bgEmail,
+                EmailConfirmed = true,
+                BG = "BG_Foxlink",
+                BU = "BU_A",
+                EMP_CD = "BGMGR001"
+            };
+
+            var result = await userManager.CreateAsync(bgUser, "Test123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(bgUser, "userBGMgr");
+                logger.LogInformation("種子資料: 創建事業群管理員 {Email} (BG: {BG}, BU: {BU})", bgEmail, bgUser.BG, bgUser.BU);
+            }
+        }
+
+        // 建立測試事業處管理員 (bu-mgr)
+        const string buEmail = "bu-mgr@sso.local";
+        if (await userManager.FindByEmailAsync(buEmail) is null)
+        {
+            var buUser = new ApplicationUser
+            {
+                UserName = buEmail,
+                Email = buEmail,
+                EmailConfirmed = true,
+                BG = "BG_Foxlink",
+                BU = "BU_A",
+                EMP_CD = "BUMGR001"
+            };
+
+            var result = await userManager.CreateAsync(buUser, "Test123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(buUser, "userBUMgr");
+                logger.LogInformation("種子資料: 創建事業處管理員 {Email} (BG: {BG}, BU: {BU})", buEmail, buUser.BG, buUser.BU);
             }
         }
     }

@@ -24,7 +24,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 // ── ASP.NET Core Identity ─────────────────────────────
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     // 帳號鎖定設定
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);

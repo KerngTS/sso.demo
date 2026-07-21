@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using AuthServer.Data;
 
 namespace AuthServer.Pages.Admin.Roles;
 
@@ -10,10 +11,10 @@ namespace AuthServer.Pages.Admin.Roles;
 public class EditModel : PageModel
 {
     private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<EditModel> _logger;
 
-    public EditModel(RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager, ILogger<EditModel> logger)
+    public EditModel(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager, ILogger<EditModel> logger)
     {
         _roleManager = roleManager;
         _userManager = userManager;
