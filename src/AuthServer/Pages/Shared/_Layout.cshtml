@@ -21,18 +21,18 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                            @if (User.IsInRole("admin") || User.IsInRole("UserManager") || User.IsInRole("ClientManager") || User.IsInRole("ScopeManager"))
+                            @if (User.IsInRole("admin") || User.IsInRole("UserManager") || User.IsInRole("ClientManager") || User.IsInRole("ScopeManager") || User.IsInRole("userBGMgr") || User.IsInRole("userBUMgr"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-page="/Index">Dashboard</a>
                             </li>
                         }
-                        @if (User.IsInRole("admin") || User.IsInRole("UserManager") || User.IsInRole("ClientManager") || User.IsInRole("ScopeManager"))
+                        @if (User.IsInRole("admin") || User.IsInRole("UserManager") || User.IsInRole("ClientManager") || User.IsInRole("ScopeManager") || User.IsInRole("userBGMgr") || User.IsInRole("userBUMgr"))
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">管理</a>
                                 <ul class="dropdown-menu">
-                                    @if (User.IsInRole("admin") || User.IsInRole("UserManager"))
+                                    @if (User.IsInRole("admin") || User.IsInRole("UserManager") || User.IsInRole("userBGMgr") || User.IsInRole("userBUMgr"))
                                     {
                                         <li><a class="dropdown-item" asp-page="/Admin/Users/Index">👥 用戶管理</a></li>
                                     }

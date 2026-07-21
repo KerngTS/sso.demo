@@ -160,9 +160,10 @@ public static class SeedData
         }
 
         const string adminEmail = "admin@sso.local";
-        if (await userManager.FindByEmailAsync(adminEmail) is null)
+        var admin = await userManager.FindByEmailAsync(adminEmail);
+        if (admin is null)
         {
-            var admin = new ApplicationUser
+            admin = new ApplicationUser
             {
                 UserName = adminEmail,
                 Email = adminEmail,
@@ -181,12 +182,25 @@ public static class SeedData
                 logger.LogInformation("種子資料: 創建管理員 {Email} (角色: admin, UserManager, ClientManager, ScopeManager)", adminEmail);
             }
         }
+        else
+        {
+            // 補足管理員的 BG/BU/EMP_CD，避免舊測試資料不齊全
+            if (string.IsNullOrEmpty(admin.BG) || string.IsNullOrEmpty(admin.BU))
+            {
+                admin.BG = "BG_Foxlink";
+                admin.BU = "BU_SSO";
+                admin.EMP_CD = "ADMIN001";
+                await userManager.UpdateAsync(admin);
+                logger.LogInformation("種子資料: 為現有管理員 {Email} 補足組織與工號資料", adminEmail);
+            }
+        }
 
         // 建立測試事業群管理員 (bg-mgr)
         const string bgEmail = "bg-mgr@sso.local";
-        if (await userManager.FindByEmailAsync(bgEmail) is null)
+        var bgUser = await userManager.FindByEmailAsync(bgEmail);
+        if (bgUser is null)
         {
-            var bgUser = new ApplicationUser
+            bgUser = new ApplicationUser
             {
                 UserName = bgEmail,
                 Email = bgEmail,
@@ -203,12 +217,22 @@ public static class SeedData
                 logger.LogInformation("種子資料: 創建事業群管理員 {Email} (BG: {BG}, BU: {BU})", bgEmail, bgUser.BG, bgUser.BU);
             }
         }
+        else
+        {
+            // 如果已存在，但沒有該角色，則自動補足 (Fix Cookies Claims Delay)
+            if (!await userManager.IsInRoleAsync(bgUser, "userBGMgr"))
+            {
+                await userManager.AddToRoleAsync(bgUser, "userBGMgr");
+                logger.LogInformation("種子資料: 為現有用戶 {Email} 補指派角色 userBGMgr", bgEmail);
+            }
+        }
 
         // 建立測試事業處管理員 (bu-mgr)
         const string buEmail = "bu-mgr@sso.local";
-        if (await userManager.FindByEmailAsync(buEmail) is null)
+        var buUser = await userManager.FindByEmailAsync(buEmail);
+        if (buUser is null)
         {
-            var buUser = new ApplicationUser
+            buUser = new ApplicationUser
             {
                 UserName = buEmail,
                 Email = buEmail,
@@ -223,6 +247,15 @@ public static class SeedData
             {
                 await userManager.AddToRoleAsync(buUser, "userBUMgr");
                 logger.LogInformation("種子資料: 創建事業處管理員 {Email} (BG: {BG}, BU: {BU})", buEmail, buUser.BG, buUser.BU);
+            }
+        }
+        else
+        {
+            // 如果已存在，但沒有該角色，則自動補足
+            if (!await userManager.IsInRoleAsync(buUser, "userBUMgr"))
+            {
+                await userManager.AddToRoleAsync(buUser, "userBUMgr");
+                logger.LogInformation("種子資料: 為現有用戶 {Email} 補指派角色 userBUMgr", buEmail);
             }
         }
     }

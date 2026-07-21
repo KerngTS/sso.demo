@@ -8,7 +8,7 @@ using AuthServer.Data;
 
 namespace AuthServer.Pages;
 
-[Authorize(Roles = "admin,UserManager,ClientManager,ScopeManager")]
+[Authorize(Roles = "admin,UserManager,ClientManager,ScopeManager,userBGMgr,userBUMgr")]
 public class IndexModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;
