@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,9 +20,54 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters.RoleClaimType = "role";
 
         // 開發環境接受自簽憑證
+        // options.BackchannelHttpHandler = new HttpClientHandler
+        // {
+        //     ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        // };
         options.BackchannelHttpHandler = new HttpClientHandler
         {
-            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) =>
+            {
+                var expectedThumbprint = builder.Configuration["AuthServer:ExpectedThumbprint"]?.Trim();
+
+                // 如果有配置預期指紋，則優先且強制進行指紋比對 (Force Certificate Pinning)
+                if (!string.IsNullOrEmpty(expectedThumbprint))
+                {
+                    if (cert != null)
+                    {
+                        // 根據配置指紋的長度動態選擇雜湊演算法：40字元為 SHA-1，64字元為 SHA-256
+                        var algorithm = expectedThumbprint.Length == 40 ? HashAlgorithmName.SHA1 : HashAlgorithmName.SHA256;
+                        var actualThumbprint = cert.GetCertHashString(algorithm);
+
+                        Console.WriteLine($"[Thumbprint Pinning] Algorithm: {algorithm.Name}");
+                        Console.WriteLine($"[Thumbprint Pinning] Expected : {expectedThumbprint}");
+                        Console.WriteLine($"[Thumbprint Pinning] Actual   : {actualThumbprint}");
+
+                        if (string.Equals(actualThumbprint, expectedThumbprint, StringComparison.OrdinalIgnoreCase))
+                        {
+                            Console.WriteLine($"[Thumbprint Pinning] 憑證指紋驗證成功！");
+                            return true;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[Thumbprint Pinning] ⚠️ 憑證指紋不匹配，拒絕連線！");
+                            return false;
+                        }
+                    }
+                    Console.WriteLine($"[Thumbprint Pinning] ⚠️ 憑證為空，拒絕連線！");
+                    return false;
+                }
+
+                // 如果沒有配置預期指紋，則退回到作業系統的受信任憑證鏈驗證
+                if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None)
+                {
+                    Console.WriteLine($"開發憑證通過作業系統驗證");
+                    return true;
+                }
+
+                Console.WriteLine($"[Thumbprint Pinning] ⚠️ 未信任此憑證且未配置預期指紋，拒絕連線！SslPolicyErrors: {sslPolicyErrors}");
+                return false;
+            }
         };
     });
 

@@ -57,3 +57,12 @@ prototype/
 # Prototype in AuthServer
 src/AuthServer/prototype/
 
+# publish
+# 忽略特定的 publish 資料夾
+publish/
+.\publish/   
+
+# 💡 建議：忽略所有 .NET 標準的發布輸出路徑（一勞永逸）
+**/[Bb]in/[Rr]elease/net*/publish/
+**/[Bb]in/[Dd]ebug/net*/publish/
+

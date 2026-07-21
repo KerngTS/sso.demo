@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using AuthServer.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -66,8 +67,28 @@ builder.Services.AddOpenIddict()
     .AddServer(options =>
     {
         // 開發階段使用暫時性的加密與簽章金鑰（正式環境應改用憑證）
-        options.AddEphemeralEncryptionKey()
-               .AddEphemeralSigningKey();
+// #if DEBUG
+//         options.AddEphemeralEncryptionKey()
+//                .AddEphemeralSigningKey();
+// #else
+//         var certPath = builder.Configuration["Certificates:Path"] ?? "sso-cert.pfx";
+//         var certPassword = builder.Configuration["Certificates:Password"] ?? "YourPassword";
+//         var tokenCertificate = new X509Certificate2(certPath, certPassword, X509KeyStorageFlags.EphemeralKeySet);
+
+//         options.AddSigningCertificate(tokenCertificate)
+//                .AddEncryptionCertificate(tokenCertificate);
+// #endif
+        var certPath = builder.Configuration["Certificates:Path"] ?? "sso-cert.pfx";
+        if (!Path.IsPathRooted(certPath))
+        {
+            certPath = Path.Combine(AppContext.BaseDirectory, certPath);
+        }
+        var certPassword = builder.Configuration["Certificates:Password"] ?? "YourPassword";
+        var tokenCertificate = new X509Certificate2(certPath, certPassword, X509KeyStorageFlags.EphemeralKeySet);
+
+        options.AddSigningCertificate(tokenCertificate)
+               .AddEncryptionCertificate(tokenCertificate);
+        
 
         // 端點路徑
         options.SetAuthorizationEndpointUris("connect/authorize")
@@ -150,6 +171,7 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 // ── 資料庫遷移與種子資料 ────────────────────────────
+#if DEBUG
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -161,5 +183,6 @@ using (var scope = app.Services.CreateScope())
 
     await SeedData.InitializeAsync(scope.ServiceProvider);
 }
+#endif
 
 app.Run();
