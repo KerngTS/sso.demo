@@ -5,11 +5,7 @@
                 <NotAuthorized>
                     @if (context.User.Identity?.IsAuthenticated != true)
                     {
-                        <div class="text-center mt-5">
-                            <h2>請先登入</h2>
-                            <p>您需要登入才能訪問此頁面。</p>
-                            <a class="btn btn-primary" href="authentication/login">登入</a>
-                        </div>
+                        <RedirectToLogin />
                     }
                     else
                     {

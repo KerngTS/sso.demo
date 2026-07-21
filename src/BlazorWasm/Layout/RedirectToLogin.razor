@@ -1,0 +1,10 @@
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@code {
+    protected override void OnInitialized()
+    {
+        // 🔄 使用官方標準 state 傳遞方式，自動、100% 精確地在登入成功後跳轉回當前頁面 (FetchData 等)
+        Navigation.NavigateToLogin("authentication/login");
+    }
+}
