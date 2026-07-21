@@ -171,7 +171,7 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 // ── 資料庫遷移與種子資料 ────────────────────────────
-#if DEBUG
+
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -183,6 +183,6 @@ using (var scope = app.Services.CreateScope())
 
     await SeedData.InitializeAsync(scope.ServiceProvider);
 }
-#endif
+
 
 app.Run();

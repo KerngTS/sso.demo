@@ -14,6 +14,13 @@
     </div>
 
     <form id="account" method="post" novalidate>
+        @if (TempData["StatusMessage"] is string statusMsg)
+        {
+            <div class="alert alert-success p-2 mb-3" style="font-size:13px; border-color: rgba(16,185,129,0.3);" role="alert">
+                ✨ @statusMsg
+            </div>
+        }
+
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3 validation-summary-errors" role="alert"></div>
 
         <div class="field">
@@ -33,7 +40,7 @@
                 <input class="form-check-input" asp-for="Input.RememberMe" style="margin-top:2px;" />
                 <label class="form-check-label" asp-for="Input.RememberMe" style="font-size:13px;"></label>
             </div>
-            <a class="forgot-link" href="#">忘記密碼？</a>
+            <a class="forgot-link" asp-page="./ChangePasswordDirect">修改密碼</a>
         </div>
 
         <button type="submit" class="btn btn-primary">登 入</button>

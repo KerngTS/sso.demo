@@ -1,7 +1,9 @@
 @page "/fetchdata"
-@attribute [Authorize]
-@inject IHttpClientFactory HttpClientFactory
 @using System.Net.Http
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>從 Web API 取得資料</PageTitle>
 
@@ -9,14 +11,23 @@
 
 <p>此頁面使用登入後取得的 Access Token，呼叫遠端 Web API 的受保護端點。</p>
 
-@if (forecast == null)
+@if (isRedirecting)
+{
+    <div class="alert alert-info">
+        <strong>🔄 正在重新導向至登入頁面...</strong> 請稍候。
+    </div>
+}
+else if (forecast == null)
 {
     <p><em>載入中...</em></p>
 }
 else
 {
-    <div class="alert alert-success">
-        <strong>✅ 身份驗證成功!</strong> 您以 <code>@userName</code> 的身份呼叫了 API。
+    <div class="alert alert-success d-flex justify-content-between align-items-center">
+        <div>
+            <strong>✅ 身份驗證成功!</strong> 您以 <code>@userName</code> 的身份呼叫了 API。
+        </div>
+        <button class="btn btn-sm btn-outline-danger" @onclick="BeginSignOut">登出帳號</button>
     </div>
 
     <table class="table table-striped">
@@ -42,15 +53,39 @@ else
     </table>
 }
 
-<button class="btn btn-primary" @onclick="CallWebApiAsync">重新整理資料</button>
+<div class="d-flex gap-2">
+    <button class="btn btn-primary" @onclick="CallWebApiAsync" disabled="@isRedirecting">重新整理資料</button>
+    @if (!isRedirecting && forecast != null)
+    {
+        <button class="btn btn-danger" @onclick="BeginSignOut">登出帳號</button>
+    }
+</div>
 
 @code {
     private WeatherForecast[]? forecast;
     private string? userName;
+    private bool isRedirecting = false;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            isRedirecting = true;
+            // 🔄 自動且即時跳轉 OIDC 登入頁面 (省略手動點擊步驟)
+            Navigation.NavigateTo($"authentication/login?returnUrl={Uri.EscapeDataString(Navigation.Uri)}");
+            return;
+        }
+
         await CallWebApiAsync();
+    }
+
+    private void BeginSignOut()
+    {
+        // 觸發 OIDC 單一登出 (SLO) 流程
+        Navigation.NavigateToLogout("authentication/logout");
     }
 
     private async Task CallWebApiAsync()
