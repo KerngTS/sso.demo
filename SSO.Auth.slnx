@@ -4,4 +4,7 @@
     <Project Path="src/BlazorWasm/BlazorWasm.csproj" />
     <Project Path="src/WebApi/WebApi.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AuthServer.Tests/AuthServer.Tests.csproj" />
+  </Folder>
 </Solution>
