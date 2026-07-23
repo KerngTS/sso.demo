@@ -21,6 +21,7 @@
     <PackageReference Include="Quartz.Extensions.Hosting" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
   </ItemGroup>
 
 </Project>

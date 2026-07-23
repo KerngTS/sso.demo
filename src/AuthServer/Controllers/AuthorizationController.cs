@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Primitives;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
@@ -23,17 +24,20 @@ public class AuthorizationController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IOpenIddictTokenManager _tokenManager;
     private readonly ILogger<AuthorizationController> _logger;
+    private readonly HybridCache _hybridCache;
 
     public AuthorizationController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         IOpenIddictTokenManager tokenManager,
-        ILogger<AuthorizationController> logger)
+        ILogger<AuthorizationController> logger,
+        HybridCache hybridCache)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _tokenManager = tokenManager;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     /// <summary>
@@ -293,8 +297,6 @@ public class AuthorizationController : Controller
             User.FindFirst(Claims.Subject)?.Value ?? "anonymous");
 
         // Client Credentials 流程 — 無對應使用者，僅回傳 client_id
-
-        // Client Credentials 流程 — 無對應使用者，僅回傳 client_id
         var subject = principal.FindFirst(Claims.Subject)?.Value;
         if (subject == null)
         {
@@ -304,9 +306,25 @@ public class AuthorizationController : Controller
             });
         }
 
-        // 嘗試查找 IdentityUser（授權碼流程的使用者）
-        var user = await _userManager.FindByIdAsync(subject);
-        if (user == null)
+        // 🛡️ 使用 .NET 10 HybridCache 原子快取，確保高併發請求下只會有一次資料庫查詢 (Stampede Protection)
+        var cachedUser = await _hybridCache.GetOrCreateAsync($"User_Claims_{subject}", async token =>
+        {
+            var dbUser = await _userManager.FindByIdAsync(subject);
+            if (dbUser == null) return null!;
+
+            var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(dbUser);
+            return new CachedUserInfo(
+                dbUser.Id,
+                dbUser.UserName,
+                dbUser.Email,
+                isEmailConfirmed,
+                dbUser.BG,
+                dbUser.BU,
+                dbUser.EMP_CD
+            );
+        });
+
+        if (cachedUser == null)
         {
             // 可能是 client_credentials，回傳 client_id 資訊
             return Ok(new Dictionary<string, object>
@@ -318,28 +336,38 @@ public class AuthorizationController : Controller
 
         var claims = new Dictionary<string, object>
         {
-            [Claims.Subject] = user.Id
+            [Claims.Subject] = cachedUser.Id
         };
 
         if (User.HasScope(Scopes.Profile))
         {
-            if (!string.IsNullOrEmpty(user.UserName))
+            if (!string.IsNullOrEmpty(cachedUser.UserName))
             {
-                claims[Claims.PreferredUsername] = user.UserName;
+                claims[Claims.PreferredUsername] = cachedUser.UserName;
             }
         }
 
         if (User.HasScope(Scopes.Email))
         {
-            if (!string.IsNullOrEmpty(user.Email))
+            if (!string.IsNullOrEmpty(cachedUser.Email))
             {
-                claims[Claims.Email] = user.Email;
-                claims[Claims.EmailVerified] = await _userManager.IsEmailConfirmedAsync(user);
+                claims[Claims.Email] = cachedUser.Email;
+                claims[Claims.EmailVerified] = cachedUser.IsEmailConfirmed;
             }
         }
 
         return Ok(claims);
     }
+
+    public record CachedUserInfo(
+        string Id,
+        string? UserName,
+        string? Email,
+        bool IsEmailConfirmed,
+        string? BG,
+        string? BU,
+        string? EMP_CD
+    );
 
     /// <summary>
     /// 根據 Scope 解析資源名稱

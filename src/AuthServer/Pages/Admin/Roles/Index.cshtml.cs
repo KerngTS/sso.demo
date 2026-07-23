@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Caching.Hybrid;
 using AuthServer.Data;
 
 namespace AuthServer.Pages.Admin.Roles;
@@ -12,12 +13,18 @@ public class IndexModel : PageModel
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<IndexModel> _logger;
+    private readonly HybridCache _hybridCache;
 
-    public IndexModel(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager, ILogger<IndexModel> logger)
+    public IndexModel(
+        RoleManager<IdentityRole> roleManager, 
+        UserManager<ApplicationUser> userManager, 
+        ILogger<IndexModel> logger,
+        HybridCache hybridCache)
     {
         _roleManager = roleManager;
         _userManager = userManager;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     public List<RoleItem> Roles { get; set; } = new();
@@ -52,6 +59,7 @@ public class IndexModel : PageModel
 
         _logger.LogWarning("管理員 {AdminUser} 刪除角色 {RoleName}", User.Identity?.Name, name);
         await _roleManager.DeleteAsync(role);
+        await _hybridCache.RemoveAsync("Dashboard_Stats");
         return RedirectToPage();
     }
 

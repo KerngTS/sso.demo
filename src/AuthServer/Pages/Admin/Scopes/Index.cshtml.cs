@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Caching.Hybrid;
 using OpenIddict.Abstractions;
 
 namespace AuthServer.Pages.Admin.Scopes;
@@ -10,11 +11,13 @@ public class IndexModel : PageModel
 {
     private readonly IOpenIddictScopeManager _scopeManager;
     private readonly ILogger<IndexModel> _logger;
+    private readonly HybridCache _hybridCache;
 
-    public IndexModel(IOpenIddictScopeManager scopeManager, ILogger<IndexModel> logger)
+    public IndexModel(IOpenIddictScopeManager scopeManager, ILogger<IndexModel> logger, HybridCache hybridCache)
     {
         _scopeManager = scopeManager;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     public List<ScopeItem> Scopes { get; set; } = new();
@@ -42,6 +45,7 @@ public class IndexModel : PageModel
         {
             _logger.LogWarning("管理員 {AdminUser} 刪除 Scope {ScopeName}", User.Identity?.Name, name);
             await _scopeManager.DeleteAsync(scope);
+            await _hybridCache.RemoveAsync("Dashboard_Stats");
         }
         return RedirectToPage();
     }

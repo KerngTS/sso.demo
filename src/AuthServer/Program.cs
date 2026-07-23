@@ -2,6 +2,7 @@ using System.Security.Cryptography.X509Certificates;
 using AuthServer.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Quartz;
 using Serilog;
 
@@ -54,13 +55,25 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
 });
 
+// ── HybridCache ───────────────────────────────────────
+#pragma warning disable EXTEXP0018 // HybridCache is preview in .NET 9 extensions but fully integrated
+builder.Services.AddHybridCache(options =>
+{
+    options.DefaultEntryOptions = new HybridCacheEntryOptions
+    {
+        Expiration = TimeSpan.FromMinutes(10), // Default absolute expiration
+        LocalCacheExpiration = TimeSpan.FromMinutes(5) // Default local memory L1 expiration
+    };
+});
+#pragma warning restore EXTEXP0018
+
 // ── OpenIddict ────────────────────────────────────────
 builder.Services.AddOpenIddict()
     .AddCore(options =>
     {
         options.UseEntityFrameworkCore()
                .UseDbContext<ApplicationDbContext>();
-
+       
         // 使用 Quartz 定期清理過期 Token
         options.UseQuartz();
     })

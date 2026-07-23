@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Caching.Hybrid;
 using System.ComponentModel.DataAnnotations;
 
 namespace AuthServer.Pages.Admin.Roles;
@@ -11,11 +12,13 @@ public class CreateModel : PageModel
 {
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<CreateModel> _logger;
+    private readonly HybridCache _hybridCache;
 
-    public CreateModel(RoleManager<IdentityRole> roleManager, ILogger<CreateModel> logger)
+    public CreateModel(RoleManager<IdentityRole> roleManager, ILogger<CreateModel> logger, HybridCache hybridCache)
     {
         _roleManager = roleManager;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     [BindProperty]
@@ -41,6 +44,9 @@ public class CreateModel : PageModel
             _logger.LogWarning("管理員 {AdminUser} 創建角色 {RoleName} 失敗: {Error}", User.Identity?.Name, Input.Name, ErrorMessage);
             return Page();
         }
+
+        // 🛡️ 創建角色成功主動清除統計快取
+        await _hybridCache.RemoveAsync("Dashboard_Stats");
 
         _logger.LogInformation("管理員 {AdminUser} 創建角色 {RoleName}", User.Identity?.Name, Input.Name);
         return RedirectToPage("Index");

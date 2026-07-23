@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Caching.Hybrid;
 using OpenIddict.Abstractions;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
@@ -14,12 +15,18 @@ public class CreateModel : PageModel
     private readonly IOpenIddictApplicationManager _appManager;
     private readonly IOpenIddictScopeManager _scopeManager;
     private readonly ILogger<CreateModel> _logger;
+    private readonly HybridCache _hybridCache;
 
-    public CreateModel(IOpenIddictApplicationManager appManager, IOpenIddictScopeManager scopeManager, ILogger<CreateModel> logger)
+    public CreateModel(
+        IOpenIddictApplicationManager appManager, 
+        IOpenIddictScopeManager scopeManager, 
+        ILogger<CreateModel> logger,
+        HybridCache hybridCache)
     {
         _appManager = appManager;
         _scopeManager = scopeManager;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     [BindProperty]
@@ -131,6 +138,9 @@ public class CreateModel : PageModel
             }
 
             await _appManager.CreateAsync(descriptor);
+
+            // 🛡️ 創建成功主動清除統計快取
+            await _hybridCache.RemoveAsync("Dashboard_Stats");
 
             _logger.LogInformation("管理員 {AdminUser} 創建 Client {ClientId} (Type={ClientType})", User.Identity?.Name, Input.ClientId, Input.ClientType);
 

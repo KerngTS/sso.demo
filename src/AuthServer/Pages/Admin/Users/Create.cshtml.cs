@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Caching.Hybrid;
 using AuthServer.Data;
 
 namespace AuthServer.Pages.Admin.Users;
@@ -13,12 +14,18 @@ public class CreateModel : PageModel
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<CreateModel> _logger;
+    private readonly HybridCache _hybridCache;
 
-    public CreateModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ILogger<CreateModel> logger)
+    public CreateModel(
+        UserManager<ApplicationUser> userManager, 
+        RoleManager<IdentityRole> roleManager, 
+        ILogger<CreateModel> logger,
+        HybridCache hybridCache)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     [BindProperty]
@@ -113,6 +120,8 @@ public class CreateModel : PageModel
         {
             await _userManager.AddToRolesAsync(user, SelectedRoles);
         }
+
+        await _hybridCache.RemoveAsync("Dashboard_Stats");
 
         _logger.LogInformation("管理員 {AdminUser} 創建用戶 {UserEmail}", User.Identity?.Name, Input.Email);
         return RedirectToPage("Index");

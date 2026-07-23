@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Caching.Hybrid;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -11,11 +12,13 @@ public class IndexModel : PageModel
 {
     private readonly IOpenIddictApplicationManager _appManager;
     private readonly ILogger<IndexModel> _logger;
+    private readonly HybridCache _hybridCache;
 
-    public IndexModel(IOpenIddictApplicationManager appManager, ILogger<IndexModel> logger)
+    public IndexModel(IOpenIddictApplicationManager appManager, ILogger<IndexModel> logger, HybridCache hybridCache)
     {
         _appManager = appManager;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     public List<ClientItem> Clients { get; set; } = new();
@@ -47,6 +50,7 @@ public class IndexModel : PageModel
             var displayName = await _appManager.GetDisplayNameAsync(app);
             _logger.LogWarning("管理員 {AdminUser} 刪除 Client {ClientId} ({DisplayName})", User.Identity?.Name, clientId, displayName);
             await _appManager.DeleteAsync(app);
+            await _hybridCache.RemoveAsync("Dashboard_Stats");
         }
         return RedirectToPage();
     }
