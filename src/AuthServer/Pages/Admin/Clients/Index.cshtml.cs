@@ -22,24 +22,90 @@ public class IndexModel : PageModel
     }
 
     public List<ClientItem> Clients { get; set; } = new();
+    public new int Page { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
+    public string? Search { get; set; }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(string? search, int page = 1)
     {
-        Clients = new List<ClientItem>();
-        // 🛡️ 安全防護：在大數據量下限制最大載入前 100 筆，防範 OOM 與資料庫 N+1 查詢過載
-        await foreach (var app in _appManager.ListAsync(count: 100, offset: 0))
-        {
-            var perms = await _appManager.GetPermissionsAsync(app);
+        Search = search;
+        Page = page < 1 ? 1 : page;
+        const int pageSize = 10;
+        var totalCount = 0;
 
-            Clients.Add(new ClientItem
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchTrim = search.Trim();
+            var tempApps = new List<object>();
+
+            // 🔍 搜尋模式：先遍歷獲取符合條件的應用程式 (在大數據下提供彈性，限制 N+1 只在當前分頁)
+            await foreach (var app in _appManager.ListAsync())
             {
-                ClientId = (await _appManager.GetClientIdAsync(app)) ?? "",
-                DisplayName = await _appManager.GetDisplayNameAsync(app),
-                ClientType = await _appManager.GetClientTypeAsync(app) ?? "",
-                GrantTypes = string.Join(", ",
-                    perms.Where(p => p.StartsWith(Permissions.Prefixes.GrantType))
-                         .Select(p => p[Permissions.Prefixes.GrantType.Length..]))
-            });
+                var clientId = await _appManager.GetClientIdAsync(app) ?? "";
+                var displayName = await _appManager.GetDisplayNameAsync(app) ?? "";
+                if (clientId.Contains(searchTrim, StringComparison.OrdinalIgnoreCase) || 
+                    displayName.Contains(searchTrim, StringComparison.OrdinalIgnoreCase))
+                {
+                    tempApps.Add(app);
+                }
+            }
+
+            totalCount = tempApps.Count;
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            if (Page > TotalPages && TotalPages > 0)
+            {
+                Page = TotalPages;
+            }
+
+            Clients = new List<ClientItem>();
+            var pagedApps = tempApps.Skip((Page - 1) * pageSize).Take(pageSize);
+            foreach (var app in pagedApps)
+            {
+                var perms = await _appManager.GetPermissionsAsync(app);
+
+                Clients.Add(new ClientItem
+                {
+                    ClientId = (await _appManager.GetClientIdAsync(app)) ?? "",
+                    DisplayName = await _appManager.GetDisplayNameAsync(app),
+                    ClientType = await _appManager.GetClientTypeAsync(app) ?? "",
+                    GrantTypes = string.Join(", ",
+                        perms.Where(p => p.StartsWith(Permissions.Prefixes.GrantType))
+                             .Select(p => p[Permissions.Prefixes.GrantType.Length..]))
+                });
+            }
+        }
+        else
+        {
+            // 📊 分頁計數 (只遍歷計數，無詳細欄位與權限子查詢，速度極快)
+            await foreach (var app in _appManager.ListAsync())
+            {
+                totalCount++;
+            }
+
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            if (Page > TotalPages && TotalPages > 0)
+            {
+                Page = TotalPages;
+            }
+
+            var offset = (Page - 1) * pageSize;
+            Clients = new List<ClientItem>();
+
+            // 🛡️ 安全防護：透過 count / offset 進行資料庫原生分頁，且僅對當前頁的 pageSize 筆資料進行詳細欄位與權限載入 (防止 N+1 風暴)
+            await foreach (var app in _appManager.ListAsync(count: pageSize, offset: offset))
+            {
+                var perms = await _appManager.GetPermissionsAsync(app);
+
+                Clients.Add(new ClientItem
+                {
+                    ClientId = (await _appManager.GetClientIdAsync(app)) ?? "",
+                    DisplayName = await _appManager.GetDisplayNameAsync(app),
+                    ClientType = await _appManager.GetClientTypeAsync(app) ?? "",
+                    GrantTypes = string.Join(", ",
+                        perms.Where(p => p.StartsWith(Permissions.Prefixes.GrantType))
+                             .Select(p => p[Permissions.Prefixes.GrantType.Length..]))
+                });
+            }
         }
     }
 

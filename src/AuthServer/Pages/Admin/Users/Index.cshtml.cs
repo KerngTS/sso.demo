@@ -18,7 +18,7 @@ public class IndexModel : PageModel
     }
 
     public List<UserItem> Users { get; set; } = new();
-    public int Page { get; set; } = 1;
+    public new int Page { get; set; } = 1;
     public int TotalPages { get; set; } = 1;
     public string? Search { get; set; }
     public string? BgFilter { get; set; }

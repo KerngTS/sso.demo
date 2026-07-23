@@ -6,9 +6,20 @@
 }
 
 <h2>@ViewData["Title"]</h2>
-<p>
-    <a class="btn btn-primary" asp-page="Create">新增 Scope</a>
-</p>
+
+<form method="get" class="row g-2 mb-3 align-items-end">
+    <div class="col-md-4">
+        <label class="form-label" style="font-size:12px; color: var(--fg) !important;">關鍵字 (Scope名稱 / 顯示名稱)</label>
+        <input name="search" class="form-control" placeholder="搜尋 Scope 名稱或顯示名稱..." value="@Model.Search" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">搜尋</button>
+        <a class="btn btn-outline-secondary" asp-page="Index">清除</a>
+    </div>
+    <div class="col-auto ms-auto">
+        <a class="btn btn-primary" asp-page="Create">新增 Scope</a>
+    </div>
+</form>
 
 @if (Model.Scopes.Count == 0)
 {
@@ -45,4 +56,21 @@ else
             }
         </tbody>
     </table>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-page="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page - 1)">← 上一頁</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">第 @Model.Page / @Model.TotalPages 頁</span>
+                </li>
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-page="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)">下一頁 →</a>
+                </li>
+            </ul>
+        </nav>
+    }
 }

@@ -22,20 +22,82 @@ public class IndexModel : PageModel
 
     public List<ScopeItem> Scopes { get; set; } = new();
     public string? ErrorMessage { get; set; }
+    public new int Page { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
+    public string? Search { get; set; }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(string? search, int page = 1)
     {
-        Scopes = new List<ScopeItem>();
-        // 🛡️ 安全防護：在大數據量下限制最大載入前 100 筆，防範 OOM 與資料庫過載
-        await foreach (var scope in _scopeManager.ListAsync(count: 100, offset: 0))
+        Search = search;
+        Page = page < 1 ? 1 : page;
+        const int pageSize = 10;
+        var totalCount = 0;
+
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            Scopes.Add(new ScopeItem
+            var searchTrim = search.Trim();
+            var tempScopes = new List<object>();
+
+            // 🔍 搜尋模式：先篩選符合關鍵字的 Scope
+            await foreach (var scope in _scopeManager.ListAsync())
             {
-                Name = (await _scopeManager.GetNameAsync(scope)) ?? "",
-                DisplayName = await _scopeManager.GetDisplayNameAsync(scope),
-                Description = await _scopeManager.GetDescriptionAsync(scope),
-                Resources = string.Join(", ", (await _scopeManager.GetResourcesAsync(scope)))
-            });
+                var name = await _scopeManager.GetNameAsync(scope) ?? "";
+                var displayName = await _scopeManager.GetDisplayNameAsync(scope) ?? "";
+                if (name.Contains(searchTrim, StringComparison.OrdinalIgnoreCase) ||
+                    displayName.Contains(searchTrim, StringComparison.OrdinalIgnoreCase))
+                {
+                    tempScopes.Add(scope);
+                }
+            }
+
+            totalCount = tempScopes.Count;
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            if (Page > TotalPages && TotalPages > 0)
+            {
+                Page = TotalPages;
+            }
+
+            Scopes = new List<ScopeItem>();
+            var pagedScopes = tempScopes.Skip((Page - 1) * pageSize).Take(pageSize);
+            foreach (var scope in pagedScopes)
+            {
+                Scopes.Add(new ScopeItem
+                {
+                    Name = (await _scopeManager.GetNameAsync(scope)) ?? "",
+                    DisplayName = await _scopeManager.GetDisplayNameAsync(scope),
+                    Description = await _scopeManager.GetDescriptionAsync(scope),
+                    Resources = string.Join(", ", (await _scopeManager.GetResourcesAsync(scope)))
+                });
+            }
+        }
+        else
+        {
+            // 📊 僅對 Scope 總數進行計數 (無額外資源加載子查詢，速度極快)
+            await foreach (var scope in _scopeManager.ListAsync())
+            {
+                totalCount++;
+            }
+
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            if (Page > TotalPages && TotalPages > 0)
+            {
+                Page = TotalPages;
+            }
+
+            var offset = (Page - 1) * pageSize;
+            Scopes = new List<ScopeItem>();
+
+            // 🛡️ 安全防護：透過 count / offset 進行資料庫原生分頁，且僅對當前頁的資料進行資源解析 (防範 OOM 與 N+1 過載)
+            await foreach (var scope in _scopeManager.ListAsync(count: pageSize, offset: offset))
+            {
+                Scopes.Add(new ScopeItem
+                {
+                    Name = (await _scopeManager.GetNameAsync(scope)) ?? "",
+                    DisplayName = await _scopeManager.GetDisplayNameAsync(scope),
+                    Description = await _scopeManager.GetDescriptionAsync(scope),
+                    Resources = string.Join(", ", (await _scopeManager.GetResourcesAsync(scope)))
+                });
+            }
         }
     }
 
