@@ -43,7 +43,8 @@ public class CreateModel : PageModel
     public async Task OnGetAsync()
     {
         AvailableScopes = new List<string>();
-        await foreach (var scope in _scopeManager.ListAsync())
+        // 🛡️ 安全上限限制：限制最多加載前 200 個 Scopes 複選框，防止在大數據量下造成加載卡頓或 OOM
+        await foreach (var scope in _scopeManager.ListAsync(count: 200, offset: 0))
         {
             var name = await _scopeManager.GetNameAsync(scope);
             if (name != null) AvailableScopes.Add(name);
@@ -164,7 +165,8 @@ public class CreateModel : PageModel
     private async Task ReloadScopesAsync()
     {
         AvailableScopes = new List<string>();
-        await foreach (var scope in _scopeManager.ListAsync())
+        // 🛡️ 安全上限限制：限制最多加載前 200 個 Scopes，防止在建立失敗重新載入時造成 OOM
+        await foreach (var scope in _scopeManager.ListAsync(count: 200, offset: 0))
         {
             var name = await _scopeManager.GetNameAsync(scope);
             if (name != null) AvailableScopes.Add(name);

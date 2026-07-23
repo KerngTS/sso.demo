@@ -38,7 +38,8 @@ public class EditModel : PageModel
 
         // Load available scopes
         AvailableScopes = new List<string>();
-        await foreach (var scope in _scopeManager.ListAsync())
+        // 🛡️ 安全上限限制：限制最多加載前 200 個 Scopes 複選框，防範 OOM
+        await foreach (var scope in _scopeManager.ListAsync(count: 200, offset: 0))
         {
             var name = await _scopeManager.GetNameAsync(scope);
             if (name != null) AvailableScopes.Add(name);
@@ -173,7 +174,8 @@ public class EditModel : PageModel
     {
         // Reload available scopes
         AvailableScopes = new List<string>();
-        await foreach (var scope in _scopeManager.ListAsync())
+        // 🛡️ 安全上限限制：限制最多加載前 200 個 Scopes 複選框，防範 OOM
+        await foreach (var scope in _scopeManager.ListAsync(count: 200, offset: 0))
         {
             var name = await _scopeManager.GetNameAsync(scope);
             if (name != null) AvailableScopes.Add(name);
@@ -183,7 +185,8 @@ public class EditModel : PageModel
     private async Task ReloadScopesAsync()
     {
         AvailableScopes = new List<string>();
-        await foreach (var scope in _scopeManager.ListAsync())
+        // 🛡️ 安全上限限制：限制最多加載前 200 個 Scopes 複選框，防範 OOM
+        await foreach (var scope in _scopeManager.ListAsync(count: 200, offset: 0))
         {
             var name = await _scopeManager.GetNameAsync(scope);
             if (name != null) AvailableScopes.Add(name);

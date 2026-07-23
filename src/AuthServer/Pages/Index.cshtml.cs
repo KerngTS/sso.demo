@@ -45,11 +45,9 @@ public class IndexModel : PageModel
             var userCount = await _userManager.Users.CountAsync(token);
             var roleCount = await _roleManager.Roles.CountAsync(token);
 
-            var clientCount = 0;
-            await foreach (var _ in _appManager.ListAsync(cancellationToken: token)) clientCount++;
-
-            var scopeCount = 0;
-            await foreach (var _ in _scopeManager.ListAsync(cancellationToken: token)) scopeCount++;
+            // 🛡️ O(1) 原生 SQL 計數：直接對資料庫執行 COUNT 查詢，避免 O(N) 遍歷與記憶體過載
+            var clientCount = (int)await _appManager.CountAsync(token);
+            var scopeCount = (int)await _scopeManager.CountAsync(token);
 
             return new DashboardStats
             {
