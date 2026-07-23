@@ -26,7 +26,8 @@ public class IndexModel : PageModel
     public async Task OnGetAsync()
     {
         Clients = new List<ClientItem>();
-        await foreach (var app in _appManager.ListAsync())
+        // 🛡️ 安全防護：在大數據量下限制最大載入前 100 筆，防範 OOM 與資料庫 N+1 查詢過載
+        await foreach (var app in _appManager.ListAsync(count: 100, offset: 0))
         {
             var perms = await _appManager.GetPermissionsAsync(app);
 

@@ -26,7 +26,8 @@ public class IndexModel : PageModel
     public async Task OnGetAsync()
     {
         Scopes = new List<ScopeItem>();
-        await foreach (var scope in _scopeManager.ListAsync())
+        // 🛡️ 安全防護：在大數據量下限制最大載入前 100 筆，防範 OOM 與資料庫過載
+        await foreach (var scope in _scopeManager.ListAsync(count: 100, offset: 0))
         {
             Scopes.Add(new ScopeItem
             {
